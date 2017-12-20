@@ -50,7 +50,7 @@
     <span class="k">pass</span>
 </pre></div>
 </div>
-<p>在我们的缓存库 zmemcache 中，使用 <code class="docutils literal"><span class="pre">f(2,</span> <span class="pre">3)</span></code> 和 <code class="docutils literal"><span class="pre">f(a=2,</span> <span class="pre">b=3)</span></code> 这两个等价的函数调用会生成两个 key,
+<p>在一些缓存库中，使用 <code class="docutils literal"><span class="pre">f(2,</span> <span class="pre">3)</span></code> 和 <code class="docutils literal"><span class="pre">f(a=2,</span> <span class="pre">b=3)</span></code> 这两个等价的函数调用会生成两个 key,
 需要分别进行缓存和失效。</p>
 <p>基于最小惊讶的原则，我们希望同一函数在所有使用的地方都按照一致的方式调用。默认我们使用的是位置参数，
 因为它的使用方式单一，顺序确定，生成的 key 比较短。开源的较出名的缓存库，如 beaker，dogpile 等也都是
