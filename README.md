@@ -14,9 +14,9 @@ Tache 是一个 Python 的缓存框架。它基于如下的目标而设计:
 
 Contents
 ---------
-* [Tag 详细用法](advance_tag.md)
-* [使用关键字参数](use_kwargs.md)
-* [Cache 空值与缓存穿透](cache_null_and_miss.md)
+* [Tag 详细用法](docs/advance_tag.md)
+* [使用关键字参数](docs/use_kwargs.md)
+* [Cache 空值与缓存穿透](docs/cache_null_and_miss.md)
 
 
 ## Features
