@@ -1,4 +1,7 @@
 # Tache
+[![Build Status](https://travis-ci.org/zhihu/tache.svg?branch=master)](https://travis-ci.org/zhihu/tache)
+[![Pypi Status](https://img.shields.io/pypi/v/tache.svg)](https://pypi.python.org/pypi/tache)
+
 Tache 是一个 Python 的缓存框架。它基于如下的目标而设计:
 
 * 同时支持 Python2 和 Python3
