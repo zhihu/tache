@@ -36,6 +36,7 @@ from recommonmark.transform import AutoStructify
 
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinxtogithub'
 ]
 
 source_parsers = {
