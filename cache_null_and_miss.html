@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cache 空值与缓存穿透 &#8212; tache 0.0.1 文档</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="prev" title="使用关键字参数" href="use_kwargs.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cache">
+<span id="cache"></span><h1>Cache 空值与缓存穿透<a class="headerlink" href="#cache" title="永久链接至标题">¶</a></h1>
+<p>当查询一个不存在的数据时，会得到一个空值。如果缓存层不缓存这个空值，那么查询就会穿透到
+数据库，给数据库带来查询压力。当一个爬虫大量抓取不存在的数据时，这个问题尤为明显。
+缓存穿透使得缓存层失去了保护后端存储的能力，如果后端存储层关联业务比较多的情况下，甚至可能引起雪崩。</p>
+<p>但是缓存空值也会带来新问题：</p>
+<ul class="simple">
+<li>其一， 浪费缓存存储空间。比起不缓存空值，会缓存更多的数据。但我们认为以空间换时间是值得的，对于
+这类数据我们也会缓存更短的时间(在5 分钟，和正常过期时间的十分之一两者间去最小值)</li>
+<li>其二， 业务层新增数据可能不能被正常取到。当缓存了一条不存在的数据后，在缓存过期前这条数据可能刚好
+被创建了出来，这时就造成了一定时间内的数据不一致。业务层需要注意到这点，如果在新建数据后就立刻访问，
+你需要 refresh 一下来刷新缓存。</li>
+</ul>
+<p>对于访问量比较小的业务，可以直接禁掉缓存空值。<code class="docutils literal"><span class="pre">Tache.cached</span></code> 方法中提供一个 <code class="docutils literal"><span class="pre">should_cache_fn</span></code> 的参数，
+接受一个 function, 传入被装饰函数执行的结果，返回一个布尔值来决定是否可以缓存。</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>    <span class="nd">@cache</span><span class="o">.</span><span class="n">cached</span><span class="p">(</span><span class="n">should_cache_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">incr</span><span class="p">(</span><span class="n">by</span><span class="p">):</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<p>这个例子中的 <code class="docutils literal"><span class="pre">should_cache_fn</span></code> 接受的函数就表示，除了 <code class="docutils literal"><span class="pre">None</span></code> 外都缓存。</p>
+<p>也可以很方便的禁用缓存，以便在开发阶段排除是否是缓存引起的 bug</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>    <span class="nd">@cache</span><span class="o">.</span><span class="n">cached</span><span class="p">(</span><span class="n">should_cache_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">incr</span><span class="p">(</span><span class="n">by</span><span class="p">):</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">Tache.batch</span></code> 不支持此用法。</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="use_kwargs.html" title="上一章">使用关键字参数</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/cache_null_and_miss.md.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>快速搜索</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="转向" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, wayhome.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/cache_null_and_miss.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,4 +1,0 @@
-# Dev/Deployment
-six
-sqlalchemy
-redis

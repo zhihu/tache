@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>使用关键字参数 &#8212; tache 0.0.1 文档</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="Cache 空值与缓存穿透" href="cache_null_and_miss.html" />
+    <link rel="prev" title="Tag 详细用法" href="advance_tag.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="">
+<span id="id1"></span><h1>使用关键字参数<a class="headerlink" href="#" title="永久链接至标题">¶</a></h1>
+<p>在同时使用位置参数和关键字参数时，生成的 key 很难在较小的代价下保证一致。如对下面这个函数:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>在我们的缓存库 zmemcache 中，使用 <code class="docutils literal"><span class="pre">f(2,</span> <span class="pre">3)</span></code> 和 <code class="docutils literal"><span class="pre">f(a=2,</span> <span class="pre">b=3)</span></code> 这两个等价的函数调用会生成两个 key,
+需要分别进行缓存和失效。</p>
+<p>基于最小惊讶的原则，我们希望同一函数在所有使用的地方都按照一致的方式调用。默认我们使用的是位置参数，
+因为它的使用方式单一，顺序确定，生成的 key 比较短。开源的较出名的缓存库，如 beaker，dogpile 等也都是
+默认使用位置参数。</p>
+<div class="section" id="">
+<span id="id2"></span><h2>基本用法<a class="headerlink" href="#" title="永久链接至标题">¶</a></h2>
+<p>虽然希望整体风格都能统一，但如果出于个人的偏爱，更喜欢用关键字参数，这里也给予了支持，需要做的是替换
+cache 装饰器的 key_func 函数。</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tache.utils</span> <span class="k">import</span> <span class="n">kwargs_key_generator</span>
+
+<span class="nd">@cache</span><span class="o">.</span><span class="n">cached</span><span class="p">(</span><span class="n">key_func</span><span class="o">=</span><span class="n">kwargs_key_generator</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</pre></div>
+</div>
+<p>使用了上述 key_func 后，<code class="docutils literal"><span class="pre">add</span></code> 函数便只能使用关键字参数来调用了。 失效也要用关键字参数失效:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">add</span><span class="o">.</span><span class="n">invalidate</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>包括刷新缓存:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">add</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="tag">
+<span id="tag"></span><h2>tag 用法的改变<a class="headerlink" href="#tag" title="永久链接至标题">¶</a></h2>
+<p>因为不再传入位置参数，现在 tag 的用法也要相应改变。</p>
+<p>单个 tag:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@cache</span><span class="o">.</span><span class="n">cached</span><span class="p">(</span><span class="n">key_func</span><span class="o">=</span><span class="n">kwargs_key_generator</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a:</span><span class="si">{a}</span><span class="s2">&quot;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</pre></div>
+</div>
+<p>多 tag:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@cache</span><span class="o">.</span><span class="n">cached</span><span class="p">(</span><span class="n">key_func</span><span class="o">=</span><span class="n">kwargs_key_generator</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a:</span><span class="si">{a}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;b:</span><span class="si">{b}</span><span class="s2">&quot;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</pre></div>
+</div>
+<p>基于函数的 tag:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@cache</span><span class="o">.</span><span class="n">cached</span><span class="p">(</span><span class="n">key_func</span><span class="o">=</span><span class="n">kwargs_key_generator</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;add:</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">])])</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="batch">
+<span id="batch"></span><h2>使用 batch ?<a class="headerlink" href="#batch" title="永久链接至标题">¶</a></h2>
+<p>目前没有什么办法来支持，只能使用位置参数</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">內容目录</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">使用关键字参数</a><ul>
+<li><a class="reference internal" href="#">基本用法</a></li>
+<li><a class="reference internal" href="#tag">tag 用法的改变</a></li>
+<li><a class="reference internal" href="#batch">使用 batch ?</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="advance_tag.html" title="上一章">Tag 详细用法</a></li>
+      <li>Next: <a href="cache_null_and_miss.html" title="下一章">Cache 空值与缓存穿透</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/use_kwargs.md.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>快速搜索</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="转向" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, wayhome.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/use_kwargs.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

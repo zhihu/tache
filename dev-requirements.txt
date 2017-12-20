@@ -1,7 +1,0 @@
-# Dev/Deployment
-sphinx
-recommonmark
-nose
-coverage
-sqlalchemy
-redis
