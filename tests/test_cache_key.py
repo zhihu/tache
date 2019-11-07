@@ -17,6 +17,8 @@ class A:
 def test_function_key():
     key = arguments_key_generator("prefix", add, 5, 6)
     assert key == "prefix:tests.test_cache_key.add|5-6"
+    key = arguments_key_generator("prefix", add, 5, u"测试")
+    assert key == "prefix:tests.test_cache_key.add|5-测试"
     key = arguments_key_generator(None, A().plus, 5, 6)
     assert key == "tests.test_cache_key.A.plus|5-6"
 

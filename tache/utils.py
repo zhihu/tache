@@ -33,6 +33,7 @@ def arguments_key_generator(namespace, fn, *args, **kwargs):
         raise ValueError(
             "tcache's default key_func"
             "function does not accept keyword arguments.")
+    args = [six.ensure_str(arg) if isinstance(arg, six.string_types) else arg for arg in args ]
     return key + "|" + "-".join(map(str, args))
 
 
