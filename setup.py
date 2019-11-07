@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(path.join(here, 'README.md'), 'r') as f:
     long_description = f.read()
 
 # get the dependencies and installs
@@ -21,6 +21,7 @@ setup(
     version=__version__,
     description='A tag based invalidation caching library',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     url='https://github.com/zhihu/tache',
     license='MIT',
     classifiers=[
